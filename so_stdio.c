@@ -171,16 +171,15 @@ int so_fgetc(SO_FILE *stream) {
         // read how much you can from stream->fd into stream->buffer
         bytes_read = read(stream->fd, stream->buffer + (stream->cursor_read % BUFFER_SIZE), BUFFER_SIZE - (stream->cursor_read % BUFFER_SIZE));
 
-
         //printf("bytes_read: %d\n", bytes_read);
         if (bytes_read < 0) {
             //printf("Can't read from file\n");
             return SO_EOF;
-        } else if ((bytes_read == 0) && (stream->cursor_read == stream->bytes_read)) {
+        } else if (bytes_read == 0){
             //printf("Read everything possible from the file\n");
-            return SO_EOF;
+            //return SO_EOF;
         } else {
-            stream->bytes_read = stream->cursor_read + bytes_read;
+            stream->bytes_read = stream->cursor_read % BUFFER_SIZE + bytes_read;
         }
     }
 
