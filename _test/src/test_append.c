@@ -52,11 +52,11 @@ int main(int argc, char *argv[])
 	else
 		test_work_dir = "_test";
 
-	sprintf(fpath, "%s/large_file", test_work_dir);
+	//sprintf(fpath, "%s/large_file", test_work_dir);
+	sprintf(fpath, "large file");
 
 	ret = create_file_with_contents(fpath, buf, buf_len);
 	FAIL_IF(ret != 0, "Couldn't create file: %s\n", fpath);
-
 
 	/* --- BEGIN TEST --- */
 	f = so_fopen(fpath, "a");

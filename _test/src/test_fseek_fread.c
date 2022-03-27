@@ -87,7 +87,9 @@ int main(int argc, char *argv[])
 
 	ret = so_fread(tmp, 1, 128, f);
 	FAIL_IF(ret != 128, "Incorrect return value for so_fread: got %d, expected %d\n", ret, 128);
+
 	FAIL_IF(memcmp(tmp, &buf[4000], 128), "Incorrect data\n");
+
 
 	ret = so_fclose(f);
 	FAIL_IF(ret != 0, "Incorrect return value for so_fclose: got %d, expected %d\n", ret, 0);

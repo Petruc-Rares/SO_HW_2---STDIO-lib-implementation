@@ -49,7 +49,6 @@ int main(int argc, char *argv[])
 
 	sprintf(fpath, "%s/huge_file", test_work_dir);
 
-
 	/* --- BEGIN TEST --- */
 	f = so_fopen(fpath, "w");
 	FAIL_IF(!f, "Couldn't open file: %s\n", fpath);
@@ -57,8 +56,6 @@ int main(int argc, char *argv[])
 	target_fd = so_fileno(f);
 
 	ret = so_fwrite(buf, 1, buf_len, f);
-
-	printf("s-au scris %d bytes\n", ret);
 
 	ret = so_fclose(f);
 	FAIL_IF(ret != 0, "Incorrect return value for so_fclose: got %d, expected %d\n", ret, 0);
