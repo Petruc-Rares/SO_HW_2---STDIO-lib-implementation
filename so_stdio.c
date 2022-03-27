@@ -168,10 +168,10 @@ int so_fgetc(SO_FILE *stream) {
         bytes_read = read(stream->fd, stream->buffer + stream->bytes_read, BUFFER_SIZE - stream->bytes_read);
         //printf("bytes_read: %d\n", bytes_read);
         if (bytes_read < 0) {
-            printf("Can't read from file\n");
+            //printf("Can't read from file\n");
             return SO_EOF;
         } else if ((bytes_read == 0) && (stream->cursor_read == stream->bytes_read)) {
-            printf("Read everything possible from the file\n");
+            //printf("Read everything possible from the file\n");
             return SO_EOF;
         } else {
             stream->bytes_read += bytes_read;
@@ -186,7 +186,19 @@ int so_fgetc(SO_FILE *stream) {
 }
 
 int so_fputc(int c, SO_FILE *stream) {
+    if ((stream == NULL) || (stream->fd < 0)) {
+        return SO_EOF;
+    }
 
+    if (stream->bytes_written >= BUFFER_SIZE) {
+        so_fflush(stream);
+        stream->bytes_written %= BUFFER_SIZE;
+    }
+
+    memcpy(stream->buffer + stream->bytes_written, &c, 1);
+    stream->bytes_written += 1;
+
+    return c;
 }
 
 int so_feof(SO_FILE *stream) {
@@ -198,7 +210,13 @@ int so_ferror(SO_FILE *stream) {
 }
 
 int so_fflush(SO_FILE *stream) {
+    if ((stream == NULL) || (stream->fd < 0)) {
+        return SO_EOF;
+    }
 
+    int ret_value = write(stream->fd, stream->buffer, stream->bytes_written);
+    memset(stream->buffer, 0, BUFFER_SIZE);
+    return (ret_value >= 0) ? 0: -1;
 }
 
 int so_fseek(SO_FILE *stream, long offset, int whence) {
@@ -218,8 +236,8 @@ size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
 
     for (it = 0; it < size * nmemb; it++) {
         int character_read = so_fgetc(stream);
-        if ((unsigned char) character_read == EOF) {
-            return 0;
+        if ((unsigned char) character_read == SO_EOF) {
+            return it / size;
         }
         memcpy(ptr + it, &character_read, 1);
     }
@@ -228,7 +246,16 @@ size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
 }
 
 size_t so_fwrite(const void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
+    int it;
 
+    for (it = 0; it < size * nmemb; it++) {
+        int ret_value = so_fputc(((const char *)ptr)[it], stream);
+        if ((unsigned char) ret_value == SO_EOF) {
+            return it / size;
+        }
+    }
+
+    return nmemb;
 }
 
 int so_fclose(SO_FILE *stream) {
@@ -236,6 +263,12 @@ int so_fclose(SO_FILE *stream) {
         //printf("nothing to close\n");
         return SO_EOF;
     } else {
+        // check if there is something
+        // to be written
+        if (stream->bytes_written != 0) {
+            so_fflush(stream);
+        }
+
         int ret_value;
         ret_value = close(stream->fd);
         free(stream);
