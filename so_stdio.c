@@ -12,6 +12,9 @@
 #define MODE_WRITE 1
 #define MODE_APPEND 2
 #define DEFAULT_PERMISSIONS 0644
+#define LAST_OPERATION_WRITE 1
+#define LAST_OPERATION_READ 0
+#define LAST_OPERATION_OTHER -1
 
 struct _so_file {
     char buffer[BUFFER_SIZE];
@@ -110,7 +113,7 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
         so_file->mode_opened[MODE_WRITE] = 1;
         so_file->mode_opened[MODE_APPEND] = 0;
     } else if (strcmp(mode, "a") == 0) {
-        so_file->fd = open(pathname, O_APPEND | O_CREAT, DEFAULT_PERMISSIONS);
+        so_file->fd = open(pathname, O_APPEND | O_CREAT | O_WRONLY, DEFAULT_PERMISSIONS);
 
         if (so_file->fd < 0) {
             //printf("Can't open file with pathname: %s\n", pathname);
@@ -124,7 +127,7 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
         so_file->mode_opened[MODE_WRITE] = 0;
         so_file->mode_opened[MODE_APPEND] = 1;
     } else if (strcmp(mode, "a+") == 0) {
-        so_file->fd = open(pathname, O_APPEND | O_CREAT, DEFAULT_PERMISSIONS);
+        so_file->fd = open(pathname, O_APPEND | O_CREAT | O_RDWR, DEFAULT_PERMISSIONS);
 
         if (so_file->fd < 0) {
             //printf("Can't open file with pathname: %s\n", pathname);
@@ -145,7 +148,7 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
     memset(so_file->buffer, 0, BUFFER_SIZE);
     so_file->cursor_read = 0;
     so_file->cursor_write = 0;
-    so_file->last_operation = -1;
+    so_file->last_operation = LAST_OPERATION_OTHER;
     so_file->bytes_read = 0;
     so_file->bytes_written = 0;
 
@@ -154,18 +157,21 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 
 int so_fgetc(SO_FILE *stream) {
     if ((stream == NULL) || (stream->fd < 0)) {
-        printf("Nothing to read, invalid stream\n");
+        //printf("Nothing to read, invalid stream\n");
         return SO_EOF;
     }
     int bytes_read = 0;
 
-    if (stream->cursor_read >= stream->bytes_read) {
+    if (((stream->cursor_read % BUFFER_SIZE != 0) && ((stream->cursor_read % BUFFER_SIZE) >= stream->bytes_read)) ||
+        (stream->cursor_read % BUFFER_SIZE == 0)) {
         if (stream->bytes_read >= BUFFER_SIZE) {
             stream->bytes_read %= BUFFER_SIZE;
         }
 
         // read how much you can from stream->fd into stream->buffer
-        bytes_read = read(stream->fd, stream->buffer + stream->bytes_read, BUFFER_SIZE - stream->bytes_read);
+        bytes_read = read(stream->fd, stream->buffer + (stream->cursor_read % BUFFER_SIZE), BUFFER_SIZE - (stream->cursor_read % BUFFER_SIZE));
+
+
         //printf("bytes_read: %d\n", bytes_read);
         if (bytes_read < 0) {
             //printf("Can't read from file\n");
@@ -174,15 +180,12 @@ int so_fgetc(SO_FILE *stream) {
             //printf("Read everything possible from the file\n");
             return SO_EOF;
         } else {
-            stream->bytes_read += bytes_read;
+            stream->bytes_read = stream->cursor_read + bytes_read;
         }
     }
 
-    if (stream->cursor_read >= BUFFER_SIZE) {
-        stream->cursor_read %= BUFFER_SIZE;
-    }
 
-    return stream->buffer[stream->cursor_read++];
+    return stream->buffer[(stream->cursor_read++) % BUFFER_SIZE];
 }
 
 int so_fputc(int c, SO_FILE *stream) {
@@ -192,11 +195,11 @@ int so_fputc(int c, SO_FILE *stream) {
 
     if (stream->bytes_written >= BUFFER_SIZE) {
         so_fflush(stream);
-        stream->bytes_written %= BUFFER_SIZE;
     }
 
     memcpy(stream->buffer + stream->bytes_written, &c, 1);
     stream->bytes_written += 1;
+    stream->last_operation = LAST_OPERATION_WRITE;
 
     return c;
 }
@@ -214,17 +217,62 @@ int so_fflush(SO_FILE *stream) {
         return SO_EOF;
     }
 
-    int ret_value = write(stream->fd, stream->buffer, stream->bytes_written);
+    int no_bytes_written = 0;
+
+    while (no_bytes_written < stream->bytes_written) {
+        int no_bytes_write = write(stream->fd, stream->buffer + no_bytes_written, stream->bytes_written - no_bytes_written);
+        if (no_bytes_write < 0) {
+            return -1;
+        }
+        no_bytes_written += no_bytes_write;
+        stream->cursor_write += no_bytes_written;
+    }
+    
+    stream->bytes_written = 0;
     memset(stream->buffer, 0, BUFFER_SIZE);
-    return (ret_value >= 0) ? 0: -1;
+    return (no_bytes_written >= 0) ? 0: -1;
 }
 
 int so_fseek(SO_FILE *stream, long offset, int whence) {
+    if (stream->last_operation == LAST_OPERATION_WRITE) {
+        // write content of buffer to fle
+        so_fflush(stream);
+        stream->bytes_written = 0;
+    } else if (stream->last_operation == LAST_OPERATION_READ) {
+        // invalidate buffer data
+        memset(stream->buffer, 0, BUFFER_SIZE);
+        stream->bytes_read = 0;
+    }
 
+    int ret_value = lseek(stream->fd, offset, whence);
+    //printf("value after move: %d\n", lseek(stream->fd, 0, SEEK_CUR));
+    if (ret_value < 0) {
+        return -1;
+    }
+
+    stream->cursor_write = ret_value;
+
+    if (!((stream->mode_opened[MODE_APPEND]) && (stream->update_mode))) {
+        stream->cursor_read  = ret_value;
+    }
+
+    return 0;
 }
 
 long so_ftell(SO_FILE *stream) {
+    if ((stream == NULL) || (stream->fd < 0)) {
+        return -1;
+    }
 
+        if (stream->bytes_written != 0) {
+        so_fflush(stream);
+    }
+
+    if (stream->mode_opened[MODE_READ]) {
+        return stream->cursor_read;
+    } else if (stream->mode_opened[MODE_WRITE]) {
+        return stream->cursor_write;
+    }
 }
 
 size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
@@ -232,16 +280,19 @@ size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
     // or not enough data available (size * nmemb)
     // for reading
     //stream
+
     int it;
 
     for (it = 0; it < size * nmemb; it++) {
         int character_read = so_fgetc(stream);
         if ((unsigned char) character_read == SO_EOF) {
+            stream->last_operation = LAST_OPERATION_READ;
             return it / size;
         }
         memcpy(ptr + it, &character_read, 1);
     }
-    
+
+    stream->last_operation = LAST_OPERATION_READ;
     return nmemb;
 }
 
@@ -251,10 +302,12 @@ size_t so_fwrite(const void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
     for (it = 0; it < size * nmemb; it++) {
         int ret_value = so_fputc(((const char *)ptr)[it], stream);
         if ((unsigned char) ret_value == SO_EOF) {
+            stream->last_operation = LAST_OPERATION_WRITE;
             return it / size;
         }
     }
 
+    stream->last_operation = LAST_OPERATION_WRITE;
     return nmemb;
 }
 
@@ -268,13 +321,13 @@ int so_fclose(SO_FILE *stream) {
         if (stream->bytes_written != 0) {
             so_fflush(stream);
         }
+        //printf("Nu s-a terminat flush-ul\n");
 
         int ret_value;
         ret_value = close(stream->fd);
         free(stream);
         return ret_value;
     }
-
 }
 
 int so_fileno(SO_FILE *stream) {
