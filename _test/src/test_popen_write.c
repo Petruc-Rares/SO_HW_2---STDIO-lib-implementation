@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
 
 	install_hooks("libso_stdio.so", hooks, 1);
 
+	
 	if (argc == 2)
 		test_work_dir = argv[1];
 	else
@@ -54,7 +55,6 @@ int main(int argc, char *argv[])
 	sprintf(fpath, "%s/popen_out", test_work_dir);
 
 	sprintf(cmd, "wc -c > %s", fpath);
-
 
 	/* BEGIN TEST */
 	f = so_popen(cmd, "w");
@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
 
 	ret = so_pclose(f);
 	FAIL_IF(ret != 0, "Incorrect return value for so_fclose: got %d, expected %d\n", ret, 0);
+
 
 	FAIL_IF(num_sys_write != 4, "Incorrect number of write syscalls: got %d, expected %d\n", num_sys_write, 4);
 

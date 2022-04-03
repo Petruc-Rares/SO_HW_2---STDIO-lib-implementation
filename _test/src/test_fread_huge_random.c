@@ -58,8 +58,6 @@ int main(int argc, char *argv[])
 	ret = create_file_with_contents(fpath, buf, buf_len);
 	FAIL_IF(ret != 0, "Couldn't create file: %s\n", fpath);
 
-	printf("buf_len: %d\n", buf_len);
-
 	/* --- BEGIN TEST --- */
 	f = so_fopen(fpath, "r");
 	FAIL_IF(!f, "Couldn't open file: %s\n", fpath);

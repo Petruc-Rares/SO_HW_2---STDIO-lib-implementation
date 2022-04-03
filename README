@@ -3,3 +3,8 @@ Dificultati:
 aveam eroare la scriere intrucat O_RDONLY este 0, si se considera ca fisierul e read only
 dar totusi scriam in el cu write si primeam eroare. Astfel am adaugat si O_WRONLY la lista
 de moduri
+    Cand am implementat so_feof, am folosit lseek initial, insa imi pica
+testul feof_fread, care verifica daca num_sys_read != 5; problema e ca
+si lseek determina apeluri de sistem ce faceau num_sys_read o valoare
+de peste 11000 la mine si imi pica testul (nu cred ca era specificata o
+constrangere pentr so_feof, in care sa nu folosim apeluri de sistem)

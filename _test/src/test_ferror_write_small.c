@@ -65,7 +65,6 @@ int main(int argc, char *argv[])
 	ret = so_ferror(f);
 	FAIL_IF(ret != 0, "Incorrect return value for so_ferror: got %d, expected %d\n", 0);
 
-
 	ret = so_fclose(f);
 	FAIL_IF(ret != SO_EOF, "Incorrect return value for so_fclose: got %d, expected %d\n", ret, SO_EOF);
 
