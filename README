@@ -1,3 +1,27 @@
+Nume:
+Grupă:
+
+# Tema 2
+# Este recomandat să folosiți diacritice
+
+Organizare
+-
+1. Explicație pentru structura creată (sau soluția de ansamblu aleasă):
+
+***Obligatoriu:*** 
+Tema mi s-a parut utila, s-a legat suficient de mult de ceea ce era studiat
+la laborator. In acelasi timp, m-a ajutat mult si la test si m-a facut
+sa inteleg mai bine notiuni precum pipe, fork si buffere de kernel sau
+user space.
+Consider ca am avut o implementare ok, realizata intr-un timp relativ scurt
+(in jur de 10-15 ore). 
+
+Implementare:
+Am realizat tema pe Linux in intregime.
+
+Cum se compilează și cum se rulează?
+Se poate da make din terminal, urmat de ./run_all.sh pentru verificare
+
 Dificultati:
     La deschiderea unui fisier in modul "a", aveam open(pathname, O_APPEND | O_CREAT) si
 aveam eroare la scriere intrucat O_RDONLY este 0, si se considera ca fisierul e read only
