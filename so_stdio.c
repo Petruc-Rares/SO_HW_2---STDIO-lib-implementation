@@ -109,7 +109,7 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->mode_opened[MODE_WRITE] = 1;
 		so_file->mode_opened[MODE_APPEND] = 0;
 	} else if (strcmp(mode, "w+") == 0) {
-		so_file->fd = open(pathname, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_PERMISSIONS);
+		so_file->fd = open(pathname, O_RDWR | O_CREAT | O_TRUNC, DEFAULT_PERMISSIONS);
 
 		if (so_file->fd < 0) {
 			//printf("Can't open file with pathname: %s\n", pathname);
@@ -248,7 +248,7 @@ int so_fflush(SO_FILE *stream)
 
 	stream->bytes_written = 0;
 	memset(stream->buffer, 0, BUFFER_SIZE);
-	return (no_bytes_written >= 0) ? 0 : -1;
+	return (no_bytes_written >= 0) ? 0 : SO_EOF;
 }
 
 int so_fseek(SO_FILE *stream, long offset, int whence)
@@ -337,6 +337,9 @@ size_t so_fwrite(const void *ptr, size_t size, size_t nmemb, SO_FILE *stream)
 
 int so_fclose(SO_FILE *stream)
 {
+	int ret_value;
+	int ret_fflush = 0;
+
 	if ((stream == NULL) || (stream->fd < 0)) {
 		//printf("nothing to close\n");
 		return SO_EOF;
@@ -345,21 +348,15 @@ int so_fclose(SO_FILE *stream)
 	// check if there is something
 	// to be written
 	if (stream->bytes_written != 0)
-		so_fflush(stream);
-		//printf("Nu s-a terminat flush-ul\n");
+		ret_fflush = so_fflush(stream);
 
 	int error_encountered = stream->error_encountered;
 	int mode_write = stream->mode_opened[MODE_WRITE];
 
-	int ret_value;
-
 	ret_value = close(stream->fd);
 	free(stream);
 
-	if ((mode_write) && (error_encountered))
-		return SO_EOF;
-	else
-		return ret_value;
+	return ((ret_value == -1) || (ret_fflush == SO_EOF)) ? SO_EOF : 0;
 }
 
 int so_fileno(SO_FILE *stream)
