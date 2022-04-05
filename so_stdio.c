@@ -209,7 +209,6 @@ int so_fclose(SO_FILE *stream)
 	int ret_fflush = 0;
 
 	if ((stream == NULL) || (stream->handle == INVALID_HANDLE_VALUE)) {
-		//printf("nothing to close\n");
 		return SO_EOF;
 	}
 
@@ -340,8 +339,8 @@ size_t so_fwrite(const void *ptr, size_t size, size_t nmemb, SO_FILE *stream)
 
 	for (it = 0; it < size * nmemb; it++) {
 		int ret_value = so_fputc(((const char *)ptr)[it], stream);
-		// TODO - this check might be useless
-		if ((unsigned char) ret_value == SO_EOF) {
+
+		if (so_feof(stream)) {
 			stream->last_operation = LAST_OPERATION_WRITE;
 			return it / size;
 		}
