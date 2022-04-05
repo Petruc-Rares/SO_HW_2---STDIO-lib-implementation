@@ -350,9 +350,6 @@ int so_fclose(SO_FILE *stream)
 	if (stream->bytes_written != 0)
 		ret_fflush = so_fflush(stream);
 
-	int error_encountered = stream->error_encountered;
-	int mode_write = stream->mode_opened[MODE_WRITE];
-
 	ret_value = close(stream->fd);
 	free(stream);
 
