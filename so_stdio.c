@@ -61,16 +61,13 @@ struct _so_file {
 SO_FILE *so_fopen(const char *pathname, const char *mode) {
 	SO_FILE *so_file = (SO_FILE *) malloc(1 * sizeof(SO_FILE));
 
-	if (so_file == NULL) {
-		//printf("Error at allocating structure of so_file\n");
+	if (so_file == NULL)
 		return NULL;
-	}
 
 	if (strcmp(mode, "r") == 0) {
 		so_file->fd = open(pathname, O_RDONLY);
 
 		if (so_file->fd < 0) {
-			//printf("Can't open file with pathname: %s\n", pathname);
 			free(so_file);
 			return NULL;
 		}
@@ -84,7 +81,6 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->fd = open(pathname, O_RDWR);
 
 		if (so_file->fd < 0) {
-			//printf("Can't open file with pathname: %s\n", pathname);
 			free(so_file);
 			return NULL;
 		}
@@ -98,7 +94,6 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->fd = open(pathname, O_WRONLY | O_CREAT | O_TRUNC, DEFAULT_PERMISSIONS);
 
 		if (so_file->fd < 0) {
-			//printf("Can't open file with pathname: %s\n", pathname);
 			free(so_file);
 			return NULL;
 		}
@@ -112,7 +107,6 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->fd = open(pathname, O_RDWR | O_CREAT | O_TRUNC, DEFAULT_PERMISSIONS);
 
 		if (so_file->fd < 0) {
-			//printf("Can't open file with pathname: %s\n", pathname);
 			free(so_file);
 			return NULL;
 		}
@@ -126,7 +120,6 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->fd = open(pathname, O_APPEND | O_CREAT | O_WRONLY, DEFAULT_PERMISSIONS);
 
 		if (so_file->fd < 0) {
-			//printf("Can't open file with pathname: %s\n", pathname);
 			free(so_file);
 			return NULL;
 		}
@@ -140,7 +133,6 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->fd = open(pathname, O_APPEND | O_CREAT | O_RDWR, DEFAULT_PERMISSIONS);
 
 		if (so_file->fd < 0) {
-			//printf("Can't open file with pathname: %s\n", pathname);
 			free(so_file);
 			return NULL;
 		}
@@ -171,7 +163,6 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 int so_fgetc(SO_FILE *stream)
 {
 	if ((stream == NULL) || (stream->fd < 0))
-		//printf("Nothing to read, invalid stream\n");
 		return SO_EOF;
 
 	int bytes_read = 0;
@@ -184,15 +175,12 @@ int so_fgetc(SO_FILE *stream)
 		// read how much you can from stream->fd into stream->buffer
 		bytes_read = read(stream->fd, stream->buffer + (stream->cursor_read % BUFFER_SIZE), BUFFER_SIZE - (stream->cursor_read % BUFFER_SIZE));
 
-		//printf("bytes_read: %d\n", bytes_read);
 		if (bytes_read < 0) {
-			//printf("Can't read from file\n");
 			stream->error_encountered = 1;
 			return SO_EOF;
 		} else if (bytes_read == 0) {
 			stream->eof_reached = 1;
 			stream->cursor_read++;
-			//printf("Read everything possible from the file\n");
 			return SO_EOF;
 		}
 	}
@@ -264,7 +252,7 @@ int so_fseek(SO_FILE *stream, long offset, int whence)
 	}
 
 	int ret_value = lseek(stream->fd, offset, whence);
-	//printf("value after move: %d\n", lseek(stream->fd, 0, SEEK_CUR));
+
 	if (ret_value < 0)
 		return -1;
 
@@ -294,7 +282,7 @@ long so_ftell(SO_FILE *stream)
 
 size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream)
 {
-	// TODO: check buffer empty
+	// check buffer empty
 	// or not enough data available (size * nmemb)
 	// for reading
 	//stream
@@ -305,7 +293,6 @@ size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream)
 
 	for (it = 0; it < size * nmemb; it++) {
 		int character_read = so_fgetc(stream);
-		// TODO - THIS MIGHT BE DELETED
 
 		if (so_feof(stream) || (stream->error_encountered)) {
 			stream->last_operation = LAST_OPERATION_READ;
@@ -324,8 +311,8 @@ size_t so_fwrite(const void *ptr, size_t size, size_t nmemb, SO_FILE *stream)
 
 	for (it = 0; it < size * nmemb; it++) {
 		int ret_value = so_fputc(((const char *)ptr)[it], stream);
-		// TODO - this check might be useless
-		if ((unsigned char) ret_value == SO_EOF) {
+
+		if (so_feof(stream)) {
 			stream->last_operation = LAST_OPERATION_WRITE;
 			return it / size;
 		}
@@ -340,10 +327,8 @@ int so_fclose(SO_FILE *stream)
 	int ret_value;
 	int ret_fflush = 0;
 
-	if ((stream == NULL) || (stream->fd < 0)) {
-		//printf("nothing to close\n");
+	if ((stream == NULL) || (stream->fd < 0))
 		return SO_EOF;
-	}
 
 	// check if there is something
 	// to be written
@@ -369,7 +354,6 @@ SO_FILE *so_popen(const char *command, const char *type)
 	SO_FILE *so_file = malloc(1 * sizeof(SO_FILE));
 
 	if (so_file == NULL) {
-		// printf("alloc failed for so_file in so_popen\n")
 		free(so_file);
 		return NULL;
 	}
@@ -458,8 +442,6 @@ int so_pclose(SO_FILE *stream)
 	if (stream->bytes_written != 0)
 		so_fflush(stream);
 
-	// TODO - why is this necessary for waitpid
-	// not to block
 	close(stream->fd);
 	int ret_wait = waitpid(stream->child_pid, &status, 0);
 
