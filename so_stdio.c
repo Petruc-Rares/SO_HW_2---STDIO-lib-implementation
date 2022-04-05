@@ -1,3 +1,5 @@
+#define DLL_EXPORTS
+
 #include "so_stdio.h"
 #include <string.h>
 #include <stdlib.h>
@@ -53,22 +55,22 @@ struct _so_file {
 	int child_pid;
 };
 
-SO_FILE *so_fopen(const char *pathname, const char *mode) {
+SO_FILE *so_fopen(const char *pathname, const char *mode)
+{
 	HANDLE handle;
-	SO_FILE *so_file = (SO_FILE *) malloc (1 * sizeof(SO_FILE));
-	
-	if (so_file == NULL) {
+	SO_FILE *so_file = (SO_FILE *) malloc(1 * sizeof(SO_FILE));
+
+	if (so_file == NULL)
 		return NULL;
-	}
-	
+
 	if (strcmp(mode, "r") == 0) {
 		so_file->handle = CreateFile(pathname,
-									GENERIC_READ,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									NULL,	/* no security attributes */
-									OPEN_EXISTING,
-									FILE_ATTRIBUTE_NORMAL,
-									NULL	/* no pattern */
+								GENERIC_READ,
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+								NULL,
+								OPEN_EXISTING,
+						FILE_ATTRIBUTE_NORMAL,
+								NULL
 								);
 
 		if (so_file->handle == INVALID_HANDLE_VALUE) {
@@ -83,12 +85,12 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->mode_opened[MODE_APPEND] = 0;
 	} else if (strcmp(mode, "r+") == 0) {
 		so_file->handle = CreateFile(pathname,
-									GENERIC_READ | GENERIC_WRITE,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									NULL,	/* no security attributes */
-									OPEN_EXISTING,
-									FILE_ATTRIBUTE_NORMAL,
-									NULL	/* no pattern */
+						GENERIC_READ | GENERIC_WRITE,
+					FILE_SHARE_READ | FILE_SHARE_WRITE,
+							NULL,
+							OPEN_EXISTING,
+							FILE_ATTRIBUTE_NORMAL,
+							NULL
 								);
 
 		if (so_file->handle == INVALID_HANDLE_VALUE) {
@@ -103,12 +105,12 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->mode_opened[MODE_APPEND] = 0;
 	} else if (strcmp(mode, "w") == 0) {
 		so_file->handle = CreateFile(pathname,
-									GENERIC_WRITE,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									NULL,	/* no security attributes */
-									CREATE_ALWAYS,
-									FILE_ATTRIBUTE_NORMAL,
-									NULL	/* no pattern */
+						GENERIC_WRITE,
+				FILE_SHARE_READ | FILE_SHARE_WRITE,
+							NULL,
+							CREATE_ALWAYS,
+							FILE_ATTRIBUTE_NORMAL,
+							NULL
 								);
 
 		if (so_file->handle == INVALID_HANDLE_VALUE) {
@@ -123,12 +125,12 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->mode_opened[MODE_APPEND] = 0;
 	} else if (strcmp(mode, "w+") == 0) {
 		so_file->handle = CreateFile(pathname,
-									GENERIC_READ | GENERIC_WRITE,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									NULL,	/* no security attributes */
-									CREATE_ALWAYS,
-									FILE_ATTRIBUTE_NORMAL,
-									NULL	/* no pattern */
+						GENERIC_READ | GENERIC_WRITE,
+				FILE_SHARE_READ | FILE_SHARE_WRITE,
+							NULL,
+							CREATE_ALWAYS,
+							FILE_ATTRIBUTE_NORMAL,
+							NULL
 								);
 
 		if (so_file->handle == INVALID_HANDLE_VALUE) {
@@ -143,12 +145,12 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->mode_opened[MODE_APPEND] = 0;
 	} else if (strcmp(mode, "a") == 0) {
 		so_file->handle = CreateFile(pathname,
-									FILE_APPEND_DATA,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									NULL,	/* no security attributes */
-									OPEN_ALWAYS,
-									FILE_ATTRIBUTE_NORMAL,
-									NULL	/* no pattern */
+							FILE_APPEND_DATA,
+				FILE_SHARE_READ | FILE_SHARE_WRITE,
+							NULL,
+							OPEN_ALWAYS,
+							FILE_ATTRIBUTE_NORMAL,
+							NULL
 								);
 
 		if (so_file->handle == INVALID_HANDLE_VALUE) {
@@ -163,12 +165,12 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 		so_file->mode_opened[MODE_APPEND] = 1;
 	} else if (strcmp(mode, "a+") == 0) {
 		so_file->handle = CreateFile(pathname,
-									FILE_APPEND_DATA | GENERIC_READ,
-									FILE_SHARE_READ | FILE_SHARE_WRITE,
-									NULL,	/* no security attributes */
-									OPEN_ALWAYS,
-									FILE_ATTRIBUTE_NORMAL,
-									NULL	/* no pattern */
+				FILE_APPEND_DATA | GENERIC_READ,
+				FILE_SHARE_READ | FILE_SHARE_WRITE,
+						NULL,
+						OPEN_ALWAYS,
+						FILE_ATTRIBUTE_NORMAL,
+						NULL
 								);
 
 		if (so_file->handle == INVALID_HANDLE_VALUE) {
@@ -199,7 +201,8 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 	return so_file;
 }
 
-int so_fclose(SO_FILE *stream) {
+int so_fclose(SO_FILE *stream)
+{
 	BOOL bRet;
 	int error_encountered;
 	int mode_write;
@@ -221,16 +224,18 @@ int so_fclose(SO_FILE *stream) {
 	return ((bRet == FALSE) || (ret_fflush == SO_EOF)) ? SO_EOF : 0;
 }
 
-HANDLE so_fileno(SO_FILE *stream) {
+HANDLE so_fileno(SO_FILE *stream)
+{
 	return stream->handle;
 }
 
-int so_fflush(SO_FILE *stream) {
+int so_fflush(SO_FILE *stream)
+{
 	int no_bytes_written = 0;
 
 	if ((stream == NULL) || (stream->handle == INVALID_HANDLE_VALUE))
 		return SO_EOF;
-	
+
 	while (no_bytes_written < stream->bytes_written) {
 		int no_bytes_write;
 		int ret_write;
@@ -240,7 +245,7 @@ int so_fflush(SO_FILE *stream) {
 				  stream->bytes_written - no_bytes_written,
 				  &no_bytes_write,
 				  NULL);
-		
+
 		if (ret_write == 0) {
 			stream->error_encountered = 1;
 			return -1;
@@ -254,8 +259,10 @@ int so_fflush(SO_FILE *stream) {
 	return (no_bytes_written >= 0) ? 0 : -1;
 }
 
-int so_fseek(SO_FILE *stream, long offset, int whence) {
+int so_fseek(SO_FILE *stream, long offset, int whence)
+{
 	int ret_value;
+
 	if (stream->last_operation == LAST_OPERATION_WRITE) {
 		// write content of buffer to fle
 		so_fflush(stream);
@@ -266,7 +273,7 @@ int so_fseek(SO_FILE *stream, long offset, int whence) {
 		stream->bytes_read = 0;
 	}
 
-	
+
 	ret_value = SetFilePointer(stream->handle,
 								   offset,
 								   NULL,
@@ -281,11 +288,12 @@ int so_fseek(SO_FILE *stream, long offset, int whence) {
 		stream->cursor_read  = ret_value;
 
 	stream->last_operation = LAST_OPERATION_SEEK;
-	
+
 	return 0;
 }
 
-long so_ftell(SO_FILE *stream) {
+long so_ftell(SO_FILE *stream)
+{
 	if ((stream == NULL) || (stream->handle == INVALID_HANDLE_VALUE))
 		return -1;
 
@@ -298,13 +306,16 @@ long so_ftell(SO_FILE *stream) {
 		return stream->cursor_write;
 }
 
-size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
+size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream)
+{
 	// check buffer empty
 	// or not enough data available (size * nmemb)
 	// for reading
 	// stream
 	int it;
-	if ((stream == NULL) || (stream->handle == INVALID_HANDLE_VALUE))
+
+	if ((stream == NULL) ||
+		(stream->handle == INVALID_HANDLE_VALUE))
 		return 0;
 
 
@@ -315,7 +326,7 @@ size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
 			stream->last_operation = LAST_OPERATION_READ;
 			return it / size;
 		}
-		
+
 		memcpy((char *)ptr + it, &character_read, 1);
 	}
 
@@ -323,7 +334,8 @@ size_t so_fread(void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
 	return nmemb;
 }
 
-size_t so_fwrite(const void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
+size_t so_fwrite(const void *ptr, size_t size, size_t nmemb, SO_FILE *stream)
+{
 	int it;
 
 	for (it = 0; it < size * nmemb; it++) {
@@ -339,13 +351,15 @@ size_t so_fwrite(const void *ptr, size_t size, size_t nmemb, SO_FILE *stream) {
 	return nmemb;
 }
 
-int so_fgetc(SO_FILE *stream) {	
+int so_fgetc(SO_FILE *stream)
+{
 	int bytes_read = 0;
 
 	if ((stream == NULL) || (stream->handle == INVALID_HANDLE_VALUE))
 		return SO_EOF;
 
-	if (((stream->cursor_read % BUFFER_SIZE != 0) && ((stream->cursor_read % BUFFER_SIZE) >= stream->bytes_read)) ||
+	if (((stream->cursor_read % BUFFER_SIZE != 0) &&
+		((stream->cursor_read % BUFFER_SIZE) >= stream->bytes_read)) ||
 		(stream->cursor_read % BUFFER_SIZE == 0)) {
 		int ret_read;
 
@@ -354,8 +368,10 @@ int so_fgetc(SO_FILE *stream) {
 
 		// read how much you can from stream->fd into stream->buffer
 		ret_read = ReadFile(stream->handle,
-				stream->buffer + (stream->cursor_read % BUFFER_SIZE),
-				BUFFER_SIZE - (stream->cursor_read % BUFFER_SIZE),
+				stream->buffer +
+				(stream->cursor_read % BUFFER_SIZE),
+				BUFFER_SIZE -
+				(stream->cursor_read % BUFFER_SIZE),
 				&bytes_read,
 				NULL);
 
@@ -365,18 +381,19 @@ int so_fgetc(SO_FILE *stream) {
 		} else if ((ret_read != 0) && (bytes_read == 0)) {
 			stream->eof_reached = 1;
 			stream->cursor_read++;
-			//printf("Read everything possible from the file\n");
 			return SO_EOF;
 		}
 	}
 
 	if (bytes_read > 0)
-		stream->bytes_read = stream->cursor_read % BUFFER_SIZE + bytes_read;
+		stream->bytes_read = stream->cursor_read % BUFFER_SIZE +
+							bytes_read;
 
 	return stream->buffer[(stream->cursor_read++) % BUFFER_SIZE];
 }
 
-int so_fputc(int c, SO_FILE *stream) {
+int so_fputc(int c, SO_FILE *stream)
+{
 	if ((stream == NULL) || (stream->handle == INVALID_HANDLE_VALUE))
 		return SO_EOF;
 
@@ -390,18 +407,22 @@ int so_fputc(int c, SO_FILE *stream) {
 	return c;
 }
 
-int so_feof(SO_FILE *stream) {
+int so_feof(SO_FILE *stream)
+{
 	return stream->eof_reached;
 }
 
-int so_ferror(SO_FILE *stream) {
+int so_ferror(SO_FILE *stream)
+{
 	return stream->error_encountered;
 }
 
-SO_FILE *so_popen(const char *command, const char *type) {
+SO_FILE *so_popen(const char *command, const char *type)
+{
 	return NULL;
 }
 
-int so_pclose(SO_FILE *stream) {
+int so_pclose(SO_FILE *stream)
+{
 	return 0;
 }
