@@ -197,7 +197,9 @@ int so_fgetc(SO_FILE *stream)
 		}
 	}
 
-	stream->bytes_read = stream->cursor_read % BUFFER_SIZE + bytes_read;
+	if (bytes_read > 0)
+		stream->bytes_read = stream->cursor_read % BUFFER_SIZE + bytes_read;
+
 	return stream->buffer[(stream->cursor_read++) % BUFFER_SIZE];
 }
 
