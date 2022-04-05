@@ -1,34 +1,29 @@
-Nume:
-Grupă:
+Nume Petruc Rares
+Grupa: 336CA
 
 # Tema 2
-# Este recomandat să folosiți diacritice
 
 Organizare
 -
-1. Explicație pentru structura creată (sau soluția de ansamblu aleasă):
+1. Explicatie pentru structura creata (sau solutia de ansamblu aleasa):
 
 ***Obligatoriu:*** 
 Tema mi s-a parut utila, s-a legat suficient de mult de ceea ce era studiat
 la laborator. In acelasi timp, m-a ajutat mult si la test si m-a facut
 sa inteleg mai bine notiuni precum pipe, fork si buffere de kernel sau
 user space.
-Consider ca am avut o implementare ok, realizata intr-un timp relativ scurt
-(in jur de 10-15 ore). 
+Pentru Windows, am tradus din Linux destul de usor. Am ales sa o fac pentru
+a ma obisnui cu documentatii.
 
 Implementare:
-Am realizat tema pe Linux in intregime.
+Am realizat tema pe Windows fara popen si pclose. La restul functiilor
+am avut de realizat modificari minore (de data asta spre exemplu
+bytesRead < 0 nu mai era conditie de eroare, ci se schimba functie
+de rezultatul apelului la readFile si lucruri de genul)
 
-Cum se compilează și cum se rulează?
-Se poate da make din terminal, urmat de ./run_all.sh pentru verificare
+Cum se compileaza si cum se ruleaza?
+Se poate da nmake /f Makefile din PowerShell, urmat de make all din Cygwin
 
 Dificultati:
-    La deschiderea unui fisier in modul "a", aveam open(pathname, O_APPEND | O_CREAT) si
-aveam eroare la scriere intrucat O_RDONLY este 0, si se considera ca fisierul e read only
-dar totusi scriam in el cu write si primeam eroare. Astfel am adaugat si O_WRONLY la lista
-de moduri
-    Cand am implementat so_feof, am folosit lseek initial, insa imi pica
-testul feof_fread, care verifica daca num_sys_read != 5; problema e ca
-si lseek determina apeluri de sistem ce faceau num_sys_read o valoare
-de peste 11000 la mine si imi pica testul (nu cred ca era specificata o
-constrangere pentr so_feof, in care sa nu folosim apeluri de sistem)
+    Nu am intampinat dificultati la traducerea codului din cel scris
+pentr Linux in cel pentru Windows.
