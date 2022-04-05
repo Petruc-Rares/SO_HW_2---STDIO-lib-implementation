@@ -64,7 +64,7 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 	if (strcmp(mode, "r") == 0) {
 		so_file->handle = CreateFile(pathname,
 									GENERIC_READ,
-									FILE_SHARE_READ,
+									FILE_SHARE_READ | FILE_SHARE_WRITE,
 									NULL,	/* no security attributes */
 									OPEN_EXISTING,
 									FILE_ATTRIBUTE_NORMAL,
@@ -104,7 +104,7 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 	} else if (strcmp(mode, "w") == 0) {
 		so_file->handle = CreateFile(pathname,
 									GENERIC_WRITE,
-									FILE_SHARE_WRITE | FILE_SHARE_READ,
+									FILE_SHARE_READ | FILE_SHARE_WRITE,
 									NULL,	/* no security attributes */
 									CREATE_ALWAYS,
 									FILE_ATTRIBUTE_NORMAL,
@@ -124,7 +124,7 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 	} else if (strcmp(mode, "w+") == 0) {
 		so_file->handle = CreateFile(pathname,
 									GENERIC_READ | GENERIC_WRITE,
-									FILE_SHARE_WRITE | FILE_SHARE_READ,
+									FILE_SHARE_READ | FILE_SHARE_WRITE,
 									NULL,	/* no security attributes */
 									CREATE_ALWAYS,
 									FILE_ATTRIBUTE_NORMAL,
@@ -144,7 +144,7 @@ SO_FILE *so_fopen(const char *pathname, const char *mode) {
 	} else if (strcmp(mode, "a") == 0) {
 		so_file->handle = CreateFile(pathname,
 									FILE_APPEND_DATA,
-									FILE_SHARE_WRITE,
+									FILE_SHARE_READ | FILE_SHARE_WRITE,
 									NULL,	/* no security attributes */
 									OPEN_ALWAYS,
 									FILE_ATTRIBUTE_NORMAL,
@@ -233,14 +233,15 @@ int so_fflush(SO_FILE *stream) {
 	
 	while (no_bytes_written < stream->bytes_written) {
 		int no_bytes_write;
+		int ret_write;
 
-		WriteFile(stream->handle,
+		ret_write = WriteFile(stream->handle,
 				  stream->buffer + no_bytes_written,
 				  stream->bytes_written - no_bytes_written,
 				  &no_bytes_write,
 				  NULL);
 		
-		if (no_bytes_write < 0) {
+		if (ret_write == 0) {
 			stream->error_encountered = 1;
 			return -1;
 		}
@@ -346,22 +347,22 @@ int so_fgetc(SO_FILE *stream) {
 
 	if (((stream->cursor_read % BUFFER_SIZE != 0) && ((stream->cursor_read % BUFFER_SIZE) >= stream->bytes_read)) ||
 		(stream->cursor_read % BUFFER_SIZE == 0)) {
+		int ret_read;
+
 		if (stream->bytes_read >= BUFFER_SIZE)
 			stream->bytes_read %= BUFFER_SIZE;
 
 		// read how much you can from stream->fd into stream->buffer
-		ReadFile(stream->handle,
+		ret_read = ReadFile(stream->handle,
 				stream->buffer + (stream->cursor_read % BUFFER_SIZE),
 				BUFFER_SIZE - (stream->cursor_read % BUFFER_SIZE),
 				&bytes_read,
 				NULL);
 
-		//printf("bytes_read: %d\n", bytes_read);
-		if (bytes_read < 0) {
-			//printf("Can't read from file\n");
+		if (ret_read == 0) {
 			stream->error_encountered = 1;
 			return SO_EOF;
-		} else if (bytes_read == 0) {
+		} else if ((ret_read != 0) && (bytes_read == 0)) {
 			stream->eof_reached = 1;
 			stream->cursor_read++;
 			//printf("Read everything possible from the file\n");
